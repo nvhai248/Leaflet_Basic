@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple LeafLet</title>
+
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+      integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI="
+      crossorigin=""
+    />
+    <script
+      src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+      integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM="
+      crossorigin=""
+    ></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js"></script>
+  </head>
+  <body>
+    <div id="map" style="height: 57rem"></div>
+
+    <script src="/data/line.js"></script>
+    <script src="/data/point.js"></script>
+    <script src="/data/polygon.js"></script>
+
+    <script>
+      // water color
+      var watercolor = L.tileLayer(
+        "https://stamen-tiles-{s}.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.{ext}",
+        {
+          attribution:
+            'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          subdomains: "abcd",
+          minZoom: 1,
+          maxZoom: 16,
+          ext: "jpg",
+        }
+      );
+      // watercolor.addTo(map)
+
+      // dark map
+      var dark = L.tileLayer(
+        "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+          subdomains: "abcd",
+          maxZoom: 19,
+        }
+      );
+      // dark.addTo(map)
+
+      // google street
+      googleStreets = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}",
+        {
+          maxZoom: 20,
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        }
+      );
+      // googleStreets.addTo(map);
+
+      //google satellite
+      googleSat = L.tileLayer(
+        "http://{s}.google.com/vt/lyrs=s&x={x}&y={y}&z={z}",
+        {
+          maxZoom: 20,
+          subdomains: ["mt0", "mt1", "mt2", "mt3"],
+        }
+      );
+    </script>
+
+    <!-- =============================================================================================================== -->
+    <!-- =============================================================================================================== -->
+    <!-- =============================================================================================================== -->
+
+    <script>
+      var map = L.map("map");
+
+      // use geolocation to move
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(function (position) {
+          // Move to user's location
+          map.setView(
+            [position.coords.latitude, position.coords.longitude],
+            12
+          );
+
+          /*==============================================
+                        MARKER
+        ================================================*/
+          var myIcon = L.icon({
+            iconUrl:
+              "https://img.icons8.com/ios-filled/100/gender-neutral-user.png",
+            iconSize: [40, 40],
+          });
+
+          var singleMarker = L.marker(
+            [position.coords.latitude, position.coords.longitude],
+            {
+              icon: myIcon,
+              draggable: true,
+            }
+          );
+
+          singleMarker
+            .bindPopup("<b>Vị trí của bạn ở đây</b>")
+            .openPopup()
+            .addTo(map);
+        });
+      }
+
+      // declare popup
+      var popup = L.popup();
+
+      // declare osm layout
+      var osm = L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+          attribution:
+            '&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors',
+          maxZoom: 19,
+        }
+      );
+
+      osm.addTo(map);
+
+      // Event click to print coordinates
+      function onMapClick(e) {
+        if (popup.isOpen()) {
+          map.closePopup(popup);
+        }
+
+        L.marker(e.latlng)
+          .addTo(map)
+          .bindPopup(`<b>Bạn đang ở ${e.latlng.toString()}</b>`)
+          .openPopup();
+      }
+      map.on("click", onMapClick);
+
+      // add circle to map
+      var circle = L.circle([10.846794, 106.669006], {
+        color: "red",
+        fillColor: "#f03",
+        fillOpacity: 0.5,
+        radius: 500,
+      }).addTo(map);
+
+      // add polygon to map
+      var polygon = L.polygon([
+        [10.854886, 106.624546],
+        [10.877476, 106.593304],
+        [10.896357, 106.620941],
+      ]).addTo(map);
+
+      /*==============================================
+                        MARKER
+        ================================================*/
+
+      var pointData = L.geoJSON(pointJson).addTo(map);
+
+      var lineData = L.geoJSON(lineJson).addTo(map);
+      
+      var polygonData = L.geoJSON(polygonJson, {
+        onEachFeature: function (feature, layer) {
+          layer.bindPopup(`<b>Name: </b>` + "RED ZONE");
+        },
+        style: {
+          fillColor: "red",
+          fillOpacity: 0.5,
+          color: "#c0c0c0",
+        },
+      }).addTo(map);
+
+      /*==============================================
+                    LAYER CONTROL
+    ================================================*/
+      var baseMaps = {
+        OSM: osm,
+        "Water color map": watercolor,
+        Dark: dark,
+        "Google Street": googleStreets,
+        "Google Satellite": googleSat,
+      };
+      var overlayMaps = {
+        "Point Data": pointData,
+        "Line Data": lineData,
+        "Polygon Data": polygonData,
+      };
+      // map.removeLayer(singleMarker)
+
+      L.control.layers(baseMaps, overlayMaps, { collapsed: false }).addTo(map);
+    </script>
+
+    <!-- HEAT MAP -->
+    <!-- =============================================================================================================== -->
+    <!-- =============================================================================================================== -->
+    <!-- =============================================================================================================== -->
+    <script>
+      var heatData = [
+        [106.7439409923507, 10.995644260023425, 1],
+        [106.7021667511437, 11.039728229608073, 0.5],
+        [106.76885582401223, 11.051715429675895, 0.2],
+        // more data points...
+      ];
+
+      var heatOptions = {
+        radius: 20,
+        blur: 15,
+        maxZoom: 17,
+      };
+
+      var heatLayer = L.heatLayer(heatData, heatOptions).addTo(map);
+    </script>
+
+    <!-- TOOLTIP -->
+    <!-- =============================================================================================================== -->
+    <!-- =============================================================================================================== -->
+    <!-- =============================================================================================================== -->
+    <script>
+      // Tạo một điểm trên bản đồ
+      var marker = L.marker([106.79075560445358, 10.867409170133882]).addTo(
+        map
+      );
+
+      // Gán tooltip cho điểm đó
+      marker.bindTooltip("Hello World!").openTooltip();
+    </script>
+  </body>
+</html>
